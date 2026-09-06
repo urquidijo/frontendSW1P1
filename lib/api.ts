@@ -171,4 +171,41 @@ export const codeGenAPI = {
   },
 };
 
+// XMI Export/Import API (Enterprise Architect compatible)
+export const xmiAPI = {
+  /**
+   * Downloads the diagram as an XMI 2.1 file compatible with Enterprise Architect.
+   * Returns the raw XML string.
+   */
+  exportXmi: async (diagramId: string): Promise<string> => {
+    const response = await api.get(`/diagrams/${diagramId}/export/xmi`, {
+      responseType: 'text',
+    });
+    return response.data;
+  },
+
+  /**
+   * Imports a diagram from an XMI file (Enterprise Architect format).
+   * @param file - The .xmi / .xml file
+   * @param workspaceId - Target workspace
+   * @param diagramName - Optional name for the new diagram
+   */
+  importXmi: async (
+    file: File,
+    workspaceId: string,
+    diagramName?: string,
+  ): Promise<{ message: string; diagram: any; stats: { classesImported: number; relationsImported: number } }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('workspaceId', workspaceId);
+    if (diagramName) formData.append('diagramName', diagramName);
+
+    const response = await api.post('/diagrams/import/xmi', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+    return response.data;
+  },
+};
+
 export default api;

@@ -25,6 +25,7 @@ import RelationshipEditor from './RelationshipEditor';
 import UMLSidebar from './UMLSidebar';
 import UMLRelationshipEdge from './UMLRelationshipEdge';
 import AIChatInterface from '../chat/AIChatInterface';
+import XmiModal from './XmiModal';
 import { UMLClass, UMLRelation, Diagram } from '@/types/uml';
 import { useSocket } from '@/hooks/useSocket';
 
@@ -53,6 +54,7 @@ export default function UMLEditor({ diagram, workspaceId, userId, userName, onSa
   const [isEditingRelationship, setIsEditingRelationship] = useState(false);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isXmiModalOpen, setIsXmiModalOpen] = useState(false);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1087,6 +1089,7 @@ export default function UMLEditor({ diagram, workspaceId, userId, userName, onSa
           onEditClass={() => selectedNode && setIsEditingClass(true)}
           hasSelectedNode={!!selectedNode}
           isConnected={isConnected}
+          onOpenXmiModal={() => setIsXmiModalOpen(true)}
         />
 
         {/* Área del Canvas */}
@@ -1178,6 +1181,21 @@ export default function UMLEditor({ diagram, workspaceId, userId, userName, onSa
           )}
         </div>
       </div>
+
+      {/* Modal XMI Export/Import */}
+      {isXmiModalOpen && (
+        <XmiModal
+          diagramId={diagram.id}
+          diagramName={diagram.name}
+          workspaceId={workspaceId}
+          onClose={() => setIsXmiModalOpen(false)}
+          onImportSuccess={(importedDiagram) => {
+            setIsXmiModalOpen(false);
+            // Navigate to the new imported diagram
+            window.location.href = `/workspace/${workspaceId}/diagram/${importedDiagram.id}`;
+          }}
+        />
+      )}
 
       {/* Lado Derecho - Chat IA */}
       {isChatOpen && (

@@ -13,7 +13,8 @@ import {
   Redo,
   Grid,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  FileCode,
 } from 'lucide-react';
 
 interface UMLToolbarProps {
@@ -29,6 +30,7 @@ interface UMLToolbarProps {
   onFitView?: () => void;
   onGenerateCode?: () => void;
   onOpenChat?: () => void;
+  onOpenXmiModal?: () => void;
 }
 
 export default function UMLToolbar({
@@ -44,6 +46,7 @@ export default function UMLToolbar({
   onFitView,
   onGenerateCode,
   onOpenChat,
+  onOpenXmiModal,
 }: UMLToolbarProps) {
   return (
     <div className="bg-gray-50 border-b border-gray-300 px-4 py-3 flex items-center justify-between">
@@ -62,8 +65,19 @@ export default function UMLToolbar({
         <h1 className="text-lg font-semibold text-gray-700">Editor UML</h1>
       </div>
 
-      {/* Sección Derecha - Solo Guardar */}
-      <div className="flex items-center space-x-1">
+      {/* Sección Derecha - Acciones */}
+      <div className="flex items-center space-x-2">
+        {/* Botón Enterprise Architect XMI */}
+        <button
+          onClick={onOpenXmiModal}
+          className="flex items-center space-x-2 px-3 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors text-sm"
+          title="Exportar / Importar XMI (Enterprise Architect)"
+        >
+          <FileCode size={16} />
+          <span>EA / XMI</span>
+        </button>
+
+        {/* Botón Guardar */}
         <button
           onClick={onSave}
           className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
