@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Users, Calendar, FileText, ArrowLeft, Settings, Share, X, Trash2 } from 'lucide-react';
+import { Plus, Users, Calendar, FileText, ArrowLeft, Settings, Share, X, Trash2, FileCode } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useWorkspaceStore } from '@/stores/workspace';
 import { diagramAPI } from '@/lib/api';
 import { Diagram } from '@/types/uml';
 import { workspaceAPI } from '@/lib/api';
+import XmiModal from '@/components/editor/XmiModal';
 
 interface WorkspacePageProps {
   params: {
@@ -29,6 +30,7 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [diagramToDelete, setDiagramToDelete] = useState<Diagram | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isXmiModalOpen, setIsXmiModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -263,6 +265,14 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
                     <Plus size={16} />
                   )}
                   <span>Create Diagram</span>
+                </button>
+                <button
+                  onClick={() => setIsXmiModalOpen(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors"
+                  title="Importar diagrama XMI desde Enterprise Architect"
+                >
+                  <FileCode size={16} />
+                  <span>Importar EA / XMI</span>
                 </button>
               </div>
             </div>
@@ -501,6 +511,20 @@ export default function WorkspacePage({ params }: WorkspacePageProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal XMI Import */}
+      {isXmiModalOpen && (
+        <XmiModal
+          workspaceId={params.workspaceId}
+          defaultTab="import"
+          onClose={() => setIsXmiModalOpen(false)}
+          onImportSuccess={(newDiagram) => {
+            setIsXmiModalOpen(false);
+            setDiagrams((prev) => [newDiagram, ...prev]);
+            router.push(`/workspace/${params.workspaceId}/diagram/${newDiagram.id}`);
+          }}
+        />
       )}
     </div>
   );

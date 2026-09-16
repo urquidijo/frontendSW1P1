@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ReactFlow, {
   Node,
   Edge,
@@ -46,6 +47,7 @@ interface UMLEditorProps {
 }
 
 export default function UMLEditor({ diagram, workspaceId, userId, userName, onSave }: UMLEditorProps) {
+  const router = useRouter();
   const [nodes, setNodes, onNodesChangeBase] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -1189,10 +1191,30 @@ export default function UMLEditor({ diagram, workspaceId, userId, userName, onSa
           diagramName={diagram.name}
           workspaceId={workspaceId}
           onClose={() => setIsXmiModalOpen(false)}
-          onImportSuccess={(importedDiagram) => {
+          onImportSuccess={(importedDiagram, mode) => {
             setIsXmiModalOpen(false);
-            // Navigate to the new imported diagram
-            window.location.href = `/workspace/${workspaceId}/diagram/${importedDiagram.id}`;
+            if (mode === 'new') {
+              // Navegar limpiamente al nuevo diagrama usando router (SPA, sin recargar página)
+              router.push(`/workspace/${workspaceId}/diagram/${importedDiagram.id}`);
+            } else {
+              // Cargar directamente en el diagrama actual sin salir del editor
+              if (importedDiagram?.data?.classes) {
+                const normalizedRelations = (importedDiagram.data.relations || []).map((r: any) => ({
+                  ...r,
+                  multiplicity: r.multiplicity || (r.sourceMultiplicity || r.targetMultiplicity ? {
+                    source: r.sourceMultiplicity || '',
+                    target: r.targetMultiplicity || '',
+                  } : undefined),
+                }));
+                handleUMLGenerated({
+                  classes: importedDiagram.data.classes,
+                  relations: normalizedRelations,
+                });
+                if (reactFlowInstance) {
+                  setTimeout(() => reactFlowInstance.fitView({ padding: 0.2 }), 300);
+                }
+              }
+            }
           }}
         />
       )}

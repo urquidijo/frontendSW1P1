@@ -5,11 +5,12 @@ import { X, Upload, Download, FileCode, CheckCircle, AlertCircle, Loader2, FileU
 import { xmiAPI } from '@/lib/api';
 
 interface XmiModalProps {
-  diagramId: string;
-  diagramName: string;
+  diagramId?: string;
+  diagramName?: string;
   workspaceId: string;
+  defaultTab?: 'export' | 'import';
   onClose: () => void;
-  onImportSuccess: (diagram: any) => void;
+  onImportSuccess: (diagram: any, mode?: 'current' | 'new') => void;
 }
 
 type Tab = 'export' | 'import';
@@ -17,12 +18,14 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function XmiModal({
   diagramId,
-  diagramName,
+  diagramName = 'Diagrama',
   workspaceId,
+  defaultTab,
   onClose,
   onImportSuccess,
 }: XmiModalProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('export');
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab || (diagramId ? 'export' : 'import'));
+  const [importMode, setImportMode] = useState<'current' | 'new'>(diagramId ? 'current' : 'new');
   const [exportStatus, setExportStatus] = useState<Status>('idle');
   const [importStatus, setImportStatus] = useState<Status>('idle');
   const [importMessage, setImportMessage] = useState('');
@@ -34,6 +37,7 @@ export default function XmiModal({
 
   // ── EXPORT ──────────────────────────────────────────────
   const handleExport = async () => {
+    if (!diagramId) return;
     setExportStatus('loading');
     try {
       const xmiContent = await xmiAPI.exportXmi(diagramId);
@@ -89,7 +93,7 @@ export default function XmiModal({
       setImportStats(result.stats);
       setImportMessage(result.message);
       setImportStatus('success');
-      onImportSuccess(result.diagram);
+      onImportSuccess(result.diagram, importMode);
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Error al importar el archivo XMI';
       setImportMessage(msg);
@@ -99,7 +103,7 @@ export default function XmiModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-[520px] max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
+      <div className="bg-white rounded-xl shadow-2xl w-[540px] max-h-[90vh] overflow-hidden flex flex-col border border-gray-200">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-slate-700 to-slate-800">
@@ -107,7 +111,9 @@ export default function XmiModal({
             <FileCode className="text-white" size={22} />
             <div>
               <h2 className="text-white font-semibold text-base">Enterprise Architect</h2>
-              <p className="text-slate-300 text-xs">Exportar / Importar XMI 2.1</p>
+              <p className="text-slate-300 text-xs">
+                {diagramId ? 'Exportar / Importar XMI 2.1' : 'Importar Diagrama XMI 2.1'}
+              </p>
             </div>
           </div>
           <button
@@ -118,31 +124,31 @@ export default function XmiModal({
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('export')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'export'
-                ? 'text-slate-800 border-b-2 border-slate-700 bg-slate-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <Download size={16} />
-            Exportar a EA
-          </button>
-          <button
-            onClick={() => setActiveTab('import')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'import'
-                ? 'text-slate-800 border-b-2 border-slate-700 bg-slate-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <Upload size={16} />
-            Importar desde EA
-          </button>
-        </div>
+        {/* Tabs - Only show tabs if we have a diagramId to export */}
+        {diagramId && (
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('export')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${activeTab === 'export'
+                  ? 'text-slate-800 border-b-2 border-slate-700 bg-slate-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              <Download size={16} />
+              Exportar a EA
+            </button>
+            <button
+              onClick={() => setActiveTab('import')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${activeTab === 'import'
+                  ? 'text-slate-800 border-b-2 border-slate-700 bg-slate-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              <Upload size={16} />
+              Importar desde EA
+            </button>
+          </div>
+        )}
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
@@ -220,13 +226,12 @@ export default function XmiModal({
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                  dragOver
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${dragOver
                     ? 'border-slate-500 bg-slate-50'
                     : selectedFile
-                    ? 'border-green-400 bg-green-50'
-                    : 'border-gray-300 hover:border-slate-400 hover:bg-gray-50'
-                }`}
+                      ? 'border-green-400 bg-green-50'
+                      : 'border-gray-300 hover:border-slate-400 hover:bg-gray-50'
+                  }`}
               >
                 <input
                   ref={fileInputRef}
@@ -255,11 +260,51 @@ export default function XmiModal({
                 )}
               </div>
 
-              {/* Diagram name */}
-              {selectedFile && (
+              {/* Destination selector when inside an existing diagram */}
+              {selectedFile && diagramId && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                  <label className="block text-xs font-semibold text-slate-800">
+                    ¿Dónde deseas cargar los elementos?
+                  </label>
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer p-1.5 rounded hover:bg-slate-100 transition-colors">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="current"
+                        checked={importMode === 'current'}
+                        onChange={() => setImportMode('current')}
+                        className="text-slate-700 focus:ring-slate-500"
+                      />
+                      <span className="font-medium text-slate-900">
+                        ⚡ Cargar directo en este diagrama actual
+                      </span>
+                      <span className="text-slate-500 text-[11px]">
+                        (sin recargar la página ni salir del editor)
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer p-1.5 rounded hover:bg-slate-100 transition-colors">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="new"
+                        checked={importMode === 'new'}
+                        onChange={() => setImportMode('new')}
+                        className="text-slate-700 focus:ring-slate-500"
+                      />
+                      <span className="font-medium text-slate-900">
+                        📄 Crear como nuevo diagrama independiente
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Diagram name( only when creating a new diagram or from workspace) */}
+              {selectedFile && (importMode === 'new' || !diagramId) && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Nombre del diagrama (opcional)
+                    Nombre del nuevo diagrama (opcional)
                   </label>
                   <input
                     type="text"
